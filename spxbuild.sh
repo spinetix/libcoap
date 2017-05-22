@@ -3,6 +3,11 @@
 # exit on any failure
 set -e
 
+# Use autoconf 2.68 as installed on CentOS 6.x
+export AUTOCONF=autoconf268
+export AUTOHEADER=autoheader268
+export AUTOM4TE=autom4te268
+
 #BUILDDIR="$PWD"/build/`echo $PLATFORM | tr 'A-Z' 'a-z'`/`echo $CONFIG | tr 'A-Z' 'a-z'`
 BUILDDIR=$HOME/svn/dev/genesis/trunk/build/`echo $PLATFORM | tr 'A-Z' 'a-z'`
 
@@ -15,8 +20,12 @@ case $CONFIG in
 	;;
     *)
 	echo 'ERROR: must define config' >&2
+	exit 1
 	;;
 esac
+
+# Generate or update configure
+./autogen.sh
 
 OBJDIR="$PLATFORM"-objdir
 [ -e "$OBJDIR" ] && rm -rf "$OBJDIR"
@@ -29,6 +38,7 @@ case $PLATFORM in
 	;;
     *)
 	echo 'ERROR: must define a platform' >&2
+	exit 1
 	;;
 esac
 
