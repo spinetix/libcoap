@@ -59,7 +59,7 @@ else
 fi
 
 # checking for autoreconf
-check_helper autoconf268
+check_helper autoconf
 if [ "$RET" = "1" ]; then
     echo "You probably need to install the package 'autoconf'."
     ERROR=1
@@ -125,7 +125,7 @@ test -n "$srcdir" || srcdir=.
 mkdir -p $srcdir/m4
 
 echo "Generating needed autotools files for $PROJECT by running autoreconf ..."
-autoreconf268 --force --install --verbose "$srcdir"
+autoreconf --force --install --verbose "$srcdir"
 
 echo
 echo "You can now run 'configure --help' to see possible configuration options."
