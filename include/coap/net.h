@@ -156,9 +156,10 @@ typedef struct coap_context_t {
 
   unsigned int session_timeout;	   /**< Number of seconds of inactivity after which an unused session will be closed. 0 means use default. */
   unsigned int max_idle_sessions;  /**< Maximum number of simultaneous unused sessions per endpoint. 0 means no maximum. */
-  unsigned int keepalive_interval; /**< Minimum interval before sending a keepalive message. 0 means disabled. */
+  unsigned int ping_timeout;	   /**< Minimum inactivity time before sending a ping message. 0 means disabled. */
+  unsigned int csm_timeout;	   /**< Timeout for waiting for a CSM from the remote side. 0 means disabled. */
 
-  void *app;                    /**< application-specific data */
+  void *app;                       /**< application-specific data */
 } coap_context_t;
 
 /**
@@ -278,6 +279,18 @@ int coap_context_set_psk( coap_context_t *context, const char *hint,
 
 int coap_context_set_pki(coap_context_t *context,
                            coap_dtls_pki_t* setup_data);
+
+/**
+ * Set the context keepalive timer for sessions.
+ * A keepalive message will be sent after if a session has been inactive,
+ * i.e. no packet sent or received, for the given number of seconds.
+ * For reliable protocols, a PING message will be sent. If a PONG has not
+ * been received before the next PING is due to be sent, the session will
+ * considered as disconnected.
+ * For unreliable protocols, an empty packet is sent
+ *
+ */
+void coap_context_set_keepalive(coap_context_t *context, unsigned int seconds);
 
 /**
  * Returns a new message id and updates @p context->message_id accordingly. The

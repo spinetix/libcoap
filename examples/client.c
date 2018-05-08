@@ -47,6 +47,7 @@ static coap_list_t *optlist = NULL;
 static coap_uri_t uri;
 static str proxy = { 0, NULL };
 static uint16_t proxy_port = COAP_DEFAULT_PORT;
+static unsigned int ping_seconds = 0;
 
 /* reading is done when this flag is set */
 static int ready = 0;
@@ -546,7 +547,7 @@ usage( const char *program, const char *version) {
   fprintf( stderr, "%s v%s -- a small CoAP implementation\n"
      "(c) 2010-2015 Olaf Bergmann <bergmann@tzi.org>\n\n"
      "usage: %s [-A type...] [-t type] [-b [num,]size] [-B seconds] [-e text]\n"
-     "\t\t[-m method] [-N] [-o file] [-P addr[:port]] [-p port]\n"
+     "\t\t[-m method] [-N] [-o file] [-P addr[:port]] [-p port] [-K interval]\n"
      "\t\t[-s duration] [-O num,text] [-T string] [-v num] [-a addr] [-U]\n\n"
      "\t\t[-u user] [-k key] [-r] URI\n\n"
      "\tURI can be an absolute or relative coap URI,\n"
@@ -578,6 +579,7 @@ usage( const char *program, const char *version) {
      "\t\t\trequest)\n"
      "\t-T token\tinclude specified token\n"
      "\t-U\t\tnever include Uri-Host or Uri-Port options\n"
+     "\t-K interval\tsend a ping after interval seconds of inactivity\n"
      "\t-r\t\tUse reliable protocol (TCP or TLS)\n"
      "\t-l list\t\tFail to send some datagram specified by a comma separated list of number or number intervals(for debugging only)\n"
      "\t-l loss%%\t\tRandmoly fail to send datagrams with the specified probability(for debugging only)\n"
@@ -1119,7 +1121,7 @@ main(int argc, char **argv) {
   ssize_t user_length = 0, key_length = 0;
   int create_uri_opts = 1;
 
-  while ((opt = getopt(argc, argv, "Nra:b:e:f:g:k:m:p:s:t:o:v:A:B:O:P:T:u:U:l:")) != -1) {
+  while ((opt = getopt(argc, argv, "Nra:b:e:f:g:k:m:p:s:t:o:v:A:B:O:P:T:u:U:l:K:")) != -1) {
     switch (opt) {
     case 'a':
       strncpy(node_str, optarg, NI_MAXHOST - 1);
@@ -1205,6 +1207,9 @@ main(int argc, char **argv) {
     case 'r':
       reliable = 1;
       break;
+    case 'K':
+      ping_seconds = atoi(optarg);
+      break;
     default:
       usage( argv[0], LIBCOAP_PACKAGE_VERSION );
       exit( 1 );
@@ -1250,6 +1255,8 @@ main(int argc, char **argv) {
     coap_log( LOG_EMERG, "cannot create context\n" );
     goto finish;
   }
+
+  coap_context_set_keepalive(ctx, ping_seconds);
 
   dst.size = res;
   dst.addr.sin.sin_port = htons( port );
