@@ -778,6 +778,8 @@ coap_resource_notify_observers(coap_resource_t *r, const str *query) {
     if (!found)
       return 0;
   } else {
+    if ( !r->subscribers )
+      return 0;
     r->dirty = 1;
   }
 
