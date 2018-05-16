@@ -422,6 +422,7 @@ void *coap_dtls_new_context(struct coap_context_t *coap_context) {
     SSL_CTX_set_cookie_generate_cb(context->dtls.ctx, coap_dtls_generate_cookie);
     SSL_CTX_set_cookie_verify_cb(context->dtls.ctx, coap_dtls_verify_cookie);
     SSL_CTX_set_info_callback(context->dtls.ctx, coap_dtls_info_callback);
+	SSL_CTX_set_psk_client_callback(context->dtls.ctx, coap_dtls_psk_client_callback);
     SSL_CTX_set_options(context->dtls.ctx, SSL_OP_NO_QUERY_MTU);
     context->dtls.meth = BIO_meth_new(BIO_TYPE_DGRAM, "coapdgram");
     if (!context->dtls.meth)
@@ -445,6 +446,7 @@ void *coap_dtls_new_context(struct coap_context_t *coap_context) {
     SSL_CTX_set_cipher_list(context->tls.ctx, "TLSv1.2:TLSv1.0");
     /*SSL_CTX_set_verify(context->tls.ctx, SSL_VERIFY_PEER, coap_dtls_verify_cert);*/
     SSL_CTX_set_info_callback(context->tls.ctx, coap_dtls_info_callback);
+	SSL_CTX_set_psk_client_callback(context->tls.ctx, coap_dtls_psk_client_callback);
     context->tls.meth = BIO_meth_new(BIO_TYPE_SOCKET, "coapsock");
     if (!context->tls.meth)
       goto error;
@@ -471,10 +473,8 @@ int coap_dtls_context_set_psk(coap_context_t *ctx,
   (void)key_len;
   coap_openssl_context_t *context = ((coap_openssl_context_t *)ctx->dtls_context);
   BIO *bio;
-  SSL_CTX_set_psk_client_callback(context->dtls.ctx, coap_dtls_psk_client_callback);
   SSL_CTX_set_psk_server_callback(context->dtls.ctx, coap_dtls_psk_server_callback);
   SSL_CTX_use_psk_identity_hint(context->dtls.ctx, hint ? hint : "");
-  SSL_CTX_set_psk_client_callback(context->tls.ctx, coap_dtls_psk_client_callback);
   SSL_CTX_set_psk_server_callback(context->tls.ctx, coap_dtls_psk_server_callback);
   SSL_CTX_use_psk_identity_hint(context->tls.ctx, hint);
   if (!context->dtls.ssl) {
@@ -730,8 +730,6 @@ void *coap_dtls_new_client_session(coap_session_t *session) {
   coap_openssl_context_t *context = ((coap_openssl_context_t *)session->context->dtls_context);
   coap_dtls_context_t *dtls = &context->dtls;
 
-  if (!context->psk_pki_enabled)
-    goto error;
   ssl = SSL_new(dtls->ctx);
   if (!ssl)
     goto error;
@@ -978,8 +976,6 @@ void *coap_tls_new_client_session(coap_session_t *session, int *connected) {
   coap_openssl_context_t *context = ((coap_openssl_context_t *)session->context->dtls_context);
   coap_tls_context_t *tls = &context->tls;
 
-  if (!context->psk_pki_enabled)
-    goto error;
   *connected = 0;
   ssl = SSL_new(tls->ctx);
   if (!ssl)
